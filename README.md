@@ -4,7 +4,7 @@ grab screens from itch.io a bit quicker
 To use the extension:
 
 1. Install a userscript extension like Tampermonkey, Greasemonkey, Violentmonkey etc. in your web browser
-2. Install the extension by creating a new one in your extension and copy-pasteing the content of [itch-scr-grab.js](https://raw.githubusercontent.com/FishieCat/itch.io-screenshots-grab-buddy/refs/heads/main/itch-scr-grab.js) into it
+2. Install the extension by creating a new one in your extension and copy-pasteing the content of [itch-scr-grab.user.js](https://raw.githubusercontent.com/FishieCat/itch.io-screenshots-grab-buddy/refs/heads/main/itch-scr-grab.user.js) into it
 3. Save and test with https://incredulous.itch.io/picture-perfect and https://itch.io/jam/gmtk-2024/rate/2903789
 
 It should look like this:
