@@ -82,11 +82,38 @@
             });
         });
 
-        // add uploads API link
+        // add uploads API link and game name
 
         const scripts = document.querySelectorAll('script:not(.isc)');
         for (let script of scripts) {
             $(script).addClass('isc');
+
+            // name
+            // Find all <script> tags with type "application/ld+json"
+            const scripts = document.querySelectorAll('script[type="application/ld+json"]');
+
+            // Iterate over them to find the one containing "Breakfast Game"
+            let nameValue = null;
+            scripts.forEach(script => {
+                try {
+                    const data = JSON.parse(script.textContent);
+                    if (data && data.name === "Breakfast Game") {
+                        if (!document.querySelector('#isc_name')) {
+                            nameValue = data.name;
+                            console.log('Extracted game name:', nameValue);
+                            // Create the <p> element with the link
+                            const $p = $('<p id="isc_name" style="text-align:center;">'+nameValue+'</p>');
+                            $('#wrapper').prepend($p);
+                            // your code here
+                        }
+                    }
+                } catch (e) {
+                    // ignore parsing errors
+                }
+
+            });
+
+            // upload api link
             if (script.textContent.includes('game_id')) {
                 const match = script.textContent.match(/game_id["']?\s*:\s*(\d+)/);
                 if (match) {
