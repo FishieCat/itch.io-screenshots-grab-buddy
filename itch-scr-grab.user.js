@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         itch.io screenshots grab-buddy
 // @namespace    http://tampermonkey.net/
-// @version      2025-05-24
+// @version      2025-05-29
 // @description  grab screens from itch.io a bit quicker, makes checking file upload dates and publish/update dates a bit easier
 // @match        https://*.itch.io/*
 // @icon         https://itch.io/favicon.ico
