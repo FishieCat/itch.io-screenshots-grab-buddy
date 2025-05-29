@@ -87,8 +87,6 @@
         const scripts = document.querySelectorAll('script:not(.isc)');
         for (let script of scripts) {
             $(script).addClass('isc');
-
-            // name
             // Find all <script> tags with type "application/ld+json"
             const scripts = document.querySelectorAll('script[type="application/ld+json"]');
 
@@ -102,16 +100,24 @@
                             nameValue = data.name;
                             console.log('Extracted game name:', nameValue);
                             // Create the <p> element with the link
-                            const $p = $('<p id="isc_name" style="text-align:center;">'+nameValue+'</p>');
+                            const $p = $('<p id="isc_name" style="text-align:center; cursor:pointer;">' + nameValue + '</p>');
                             $('#wrapper').prepend($p);
-                            // your code here
+
+                            // Add click listener to select text when clicked
+                            $p.on('click', function () {
+                                const range = document.createRange();
+                                const selection = window.getSelection();
+                                range.selectNodeContents(this);
+                                selection.removeAllRanges();
+                                selection.addRange(range);
+                            });
                         }
                     }
                 } catch (e) {
                     // ignore parsing errors
                 }
-
             });
+
 
             // upload api link
             if (script.textContent.includes('game_id')) {
