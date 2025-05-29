@@ -88,35 +88,46 @@
         for (let script of scripts) {
             $(script).addClass('isc');
             // Find all <script> tags with type "application/ld+json"
-            const scripts = document.querySelectorAll('script[type="application/ld+json"]');
+const scripts = document.querySelectorAll('script[type="application/ld+json"]');
 
-            // Iterate over them to find the one containing "Breakfast Game"
-            let nameValue = null;
-            scripts.forEach(script => {
-                try {
-                    const data = JSON.parse(script.textContent);
-                    if (data && data.name === "Breakfast Game") {
-                        if (!document.querySelector('#isc_name')) {
-                            nameValue = data.name;
-                            console.log('Extracted game name:', nameValue);
-                            // Create the <p> element with the link
-                            const $p = $('<p id="isc_name" style="text-align:center; cursor:pointer;">' + nameValue + '</p>');
-                            $('#wrapper').prepend($p);
+// Iterate over them to find the one containing "Breakfast Game"
+let nameValue = null;
+scripts.forEach(script => {
+    try {
+        const data = JSON.parse(script.textContent);
+        if (data && data.name === "Breakfast Game") {
+            if (!document.querySelector('#isc_name')) {
+                nameValue = data.name;
+                console.log('Extracted game name:', nameValue);
 
-                            // Add click listener to select text when clicked
-                            $p.on('click', function () {
-                                const range = document.createRange();
-                                const selection = window.getSelection();
-                                range.selectNodeContents(this);
-                                selection.removeAllRanges();
-                                selection.addRange(range);
-                            });
-                        }
-                    }
-                } catch (e) {
-                    // ignore parsing errors
-                }
-            });
+                // Extract author from the current URL (e.g., "sireel" from "https://sireel.itch.io/breakfast-game")
+                const hostname = window.location.hostname; // e.g., "sireel.itch.io"
+                const author = hostname.split('.')[0]; // "sireel"
+
+                // Create the <p> element with the two spans
+                const $p = $(`
+                    <p id="isc_name" style="text-align:center; cursor:default;">
+                        <span id="game_name" style="cursor:pointer;">${nameValue}</span> |
+                        <span><a href="https://${author}.itch.io/" target="_blank" style="text-decoration:none;">${author}</a></span>
+                    </p>
+                `);
+                $('#wrapper').prepend($p);
+
+                // Add click listener to select text in the game name span
+                $('#game_name').on('click', function () {
+                    const range = document.createRange();
+                    const selection = window.getSelection();
+                    range.selectNodeContents(this);
+                    selection.removeAllRanges();
+                    selection.addRange(range);
+                });
+            }
+        }
+    } catch (e) {
+        // ignore parsing errors
+    }
+});
+
 
 
             // upload api link
