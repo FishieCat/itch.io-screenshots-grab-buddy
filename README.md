@@ -5,11 +5,11 @@ To use the extension:
 
 1. Install Tampermonkey in your web browser. Greasemonkey, Violentmonkey etc. might also work.
 2. Visit [itch-scr-grab.user.js](https://raw.githubusercontent.com/FishieCat/itch.io-screenshots-grab-buddy/refs/heads/main/itch-scr-grab.user.js) and install
-3. Test at https://incredulous.itch.io/picture-perfect and https://itch.io/jam/gmtk-2024/rate/2903789 or some other game/jam pages
+3. Test for example at [forameuss.itch.io/death-trips](https://forameuss.itch.io/death-trips) [incredulous.itch.io/picture-perfect](https://incredulous.itch.io/picture-perfect) or [itch.io/jam/gmtk-2024/rate/2903789](https://itch.io/jam/gmtk-2024/rate/2903789) or some other game/jam pages
 
-Should look like:
+It should add a box like this:
 
-![image](https://github.com/user-attachments/assets/ee6de0b5-77e9-4880-b7bd-acdebde6700c)
+![image](https://github.com/user-attachments/assets/391cc792-089c-4a08-9509-9e5d5450edcb)
 
 Hover the buttons/inputs to find out details
 
@@ -21,3 +21,5 @@ Features:
 - description converted to markdown (not thoroughly tested yet)
 - oneliner for cmd, bash or terminal to get all screenshots
 - individual links to screenshots
+
+(full features for game pages — jam pages only get screenshot aids)
