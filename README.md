@@ -14,3 +14,10 @@ Should look like:
 Hover the buttons/inputs to find out details
 
 For example you can copy-paste the curl command into cmd.exe, git-bash, bash or Terminal (OS X) to download all in one go.
+
+Features:
+- able to check file dates if you get a free itch io api key
+- copy game name quickly / consistent link to author page
+- description converted to markdown (not thoroughly tested yet)
+- oneliner for cmd, bash or terminal to get all screenshots
+- individual links to screenshots
