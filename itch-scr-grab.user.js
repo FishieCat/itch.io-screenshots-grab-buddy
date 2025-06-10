@@ -84,13 +84,14 @@
             // Extract author from the current URL (e.g., "sireel" from "https://sireel.itch.io/breakfast-game")
             const hostname = window.location.hostname; // e.g., "sireel.itch.io"
             const author = hostname.split('.')[0]; // "sireel"
+            const author_link = 'https://' + author + '.itch.io'
 
             // Create the <div> element with the two
             let $div = $(`
     <div id="isc_meta">
         <div id="isc_uploads"><button id="isc_apikey" title="Check/set API key">API key</button> (<a href="https://itch.io/user/settings/api-keys" target="_blank" title="Get key here, requires free account">itch.io</a>) <a id="isc_apilink" target="_blank"></a></div><br>
         <input id="isc_gamename" class="isc_input" type="text" title="Game name for easy copy paste" value="${nameValue}" readonly />
-        <input id="isc_authorname" class="isc_input" type="text" title="Author name for easy copy paste" value="${author}" readonly /><br><br>
+        <a id="isc_authorname" title="Author profile page" target="_blank" href="${author_link}">${author}</a><br><br>
         <textarea class="isc_textarea" id="isc_markdown" title="Description area HTML as Markdown for easy copy paste"></textarea><br><br>
     </div>
 `);
@@ -105,7 +106,7 @@
             }
 
             // self-select
-            $('#isc_gamename, #isc_authorname, #isc_markdown, #isc_cli').on('click', function () {
+            $('#isc_gamename, #isc_markdown, #isc_cli').on('click', function () {
                 this.select();
             });
 
@@ -226,6 +227,12 @@
           font-size: 4px;
           width: 80em;
           height: 10em;
+        }
+        .screenshot_list.isc {
+          font-size: 16px !important;
+        }
+        .right_col {
+          display: block !important;
         }
     `;
         document.head.appendChild(style);
