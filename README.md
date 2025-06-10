@@ -19,7 +19,7 @@ Features:
 - able to check file dates if you get a free itch io api key
 - copy game name quickly / consistent link to author page
 - description converted to markdown (not thoroughly tested yet)
-- oneliner for cmd, bash or terminal to get all screenshots
+- screenshot download one-liner for cmd, bash or terminal
 - individual links to screenshots
 
 (full features for game pages — jam pages only get screenshot aids)
