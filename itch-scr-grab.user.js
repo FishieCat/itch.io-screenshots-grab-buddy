@@ -1,12 +1,15 @@
 // ==UserScript==
 // @name         itch.io screenshots grab-buddy
 // @namespace    http://tampermonkey.net/
-// @version      2025-05-29
+// @version      2025-06-10
 // @description  grab screens from itch.io a bit quicker, makes checking file upload dates and publish/update dates a bit easier
 // @match        https://*.itch.io/*
 // @icon         https://itch.io/favicon.ico
+// @require      https://code.jquery.com/jquery-3.6.0.min.js
 // @require      https://git.io/vMmuf
-// @grant        none
+// @require      https://cdn.jsdelivr.net/npm/turndown@7.1.1/dist/turndown.min.js
+// @grant GM.getValue
+// @grant GM.setValue
 // ==/UserScript==
 
 (function() {
@@ -14,173 +17,219 @@
 
     // Your code here...
 
-    const itch_api_key = '[ENTER YOUR FREE ITCH IO API KEY HERE SEE https://github.com/FishieCat/itch.io-api-upload-check ]';
-
-    function log(str) {
-        console.log('%c ' + str + ' ', 'background: white; color: grey');
+    function log(...args) {
+        // Join all args into a single string separated by space
+        const message = args.map(arg => (typeof arg === 'object' ? JSON.stringify(arg) : arg)).join(' ');
+        console.log('%c ' + message + ' ', 'background: white; color: grey');
     }
 
-    //window.addEventListener('load', function () { unreliable in background
+    async function getApiKey() {
+        try {
+            return await GM.getValue('itch_api_key', '');
+        } catch (err) {
+            log('Error getting API key: ' + err);
+            return '';
+        }
+    }
+
+    async function setApiKey(key) {
+        await GM.setValue('itch_api_key', key);
+    }
+
     waitForKeyElements("body", function () {
-        log('itch screen comfy loaded');
 
-        function isc() {
+        // Create screenshot download area
+        const art_area = '<div id="isc_art"><textarea title="Copy this to cmd.exe or terminal or bash to auto-download all at once" class="isc_textarea" id="isc_cli" onclick="this.select()"></textarea></div>';
+        $('div.screenshot_list, div.game_screenshots').first().before(art_area);
 
-            // game page handler - crete textarea for console download code
-            if ( ! $('textarea#isc_wget').length ) {
-                $('div.screenshot_list').before('<textarea style="font-size:4px;width:80em;height:10em;" id="isc_wget" onclick="this.select()">');
-            }
+        // some game pages hide screenshots when browser is wide. Unhide!
+        $(".right_col").css({ display: "block" });
 
-            // game page handler
-            $('div.screenshot_list:not(.isc)').each(function(){
+        // game/jam page handler
+        $('div.screenshot_list:not(.isc), div.game_screenshots:not(.isc)').each(function(){
 
-                // some game pages hide screenshots when browser is wide. Unhide!
-                $(".right_col").css({ display: "block" });
+            $(this).addClass('isc');
+            let scrcode = '';
+            let curl_line = 'curl ';
+            $(this).find('a').each(function(idx){
+                let scrurl = $(this).attr('href');
+                let idxstr =  (idx + 1).toString().padStart(2, '0')
 
-                $(this).addClass('isc');
-                var scrcode = '';
-                $(this).find('a').each(function(idx){
-                    let scrurl = $(this).attr('href');
-                    let idxstr =  (idx + 1).toString().padStart(2, '0')
-                    let scrname = 's' + idxstr + '.' + scrurl.split('.').pop();
-                    scrcode += '<a target="_blank" href="' + scrurl + '" + download="' + scrname + '">' + scrname + '</a> <input class="issel" value="' + scrname + '"><br>'
-                    let wget_line = 'wget -O ' + scrname + ' ' + scrurl;
-                    $('textarea#isc_wget').append(wget_line + '\n');
-                    console.log(wget_line);
-                });
-
-                $('textarea#isc_wget').append('exit');
-                $(this).prepend(scrcode);
-                $("input.issel").on("click", function () {
-                    $(this).select();
-                });
-            });
-
-            // game jam game page handler - crete textarea for console download code
-            if ( ! $('textarea#isc_wget').length ) {
-                $('div.game_screenshots').before('<textarea style="font-size:4px;width:80em;height:10em;" id="isc_wget" onclick="this.select()">');
-            }
-
-            // game jam game page handler
-            $('div.game_screenshots:not(.isc)').each(function(){
-                $(this).addClass('isc');
-                var scrcode = '';
-                $(this).find('a').each(function(idx){
-                    let scrurl = $(this).attr('href');
-                    let idxstr =  (idx + 1).toString().padStart(2, '0')
-                    let scrname = 's' + idxstr + '.' + scrurl.split('.').pop();
-                    scrcode += '<a target="_blank" href="' + scrurl + '" + download="' + scrname + '">' + scrname + '</a> <input class="issel" value="' + scrname + '"><br>'
-                    let wget_line = 'wget -O ' + scrname + ' ' + scrurl;
-                    $('textarea#isc_wget').append(wget_line + '\n');
-                    console.log(wget_line);
-                });
-
-                $('textarea#isc_wget').append('exit');
-                $(this).prepend(scrcode);
-                $("input.issel").on("click", function () {
-                    $(this).select();
-                });
-            });
-
-            // add uploads API link and game name
-
-            if (!document.querySelector('#isc_name')) {
-                const fullTitle = document.title; // e.g., "Breakfast Game by sireel"
-                const nameValue = fullTitle.split(' by ').slice(0, -1).join(' by ');
-                console.log('Extracted game name:', nameValue);
-
-                // Extract author from the current URL (e.g., "sireel" from "https://sireel.itch.io/breakfast-game")
-                const hostname = window.location.hostname; // e.g., "sireel.itch.io"
-                const author = hostname.split('.')[0]; // "sireel"
-
-                // Create the <p> element with the two
-                const $p = $(`
-    <p id="isc_name" style="text-align:center;">
-        <input id="game_name_input" type="text" value="${nameValue}" readonly style="background-color: white !important; color: black !important; padding: 3px; border:none; background:transparent; text-align:center; cursor:pointer; font:inherit; width:auto;" />
-        |
-        <span><a href="https://${author}.itch.io/" target="_blank" style="text-decoration:none;">${author}</a></span>
-    </p>
-`);
-                $('#wrapper').prepend($p);
-
-                // Add click listener to auto-select input text
-                $('#game_name_input').on('click', function () {
-                    this.select();
-                });
-            }
-
-            if (!document.querySelector('#isc_uploads')) {
-                // upload api link
-                const metaTag = document.querySelector('meta[name="itch:path"]');
-                let gameId = null;
-
-                if (metaTag) {
-                    const content = metaTag.getAttribute('content'); // e.g., "games/3572263"
-                    const match = content.match(/\/?(\d+)$/); // extract the number at the end
-                    if (match) {
-                        gameId = match[1];
-                        console.log('Extracted game ID:', gameId);
-                    }
+                // Filename extension overly careful
+                let ext = scrurl.split('?')[0].split('#')[0].split('.').pop().toLowerCase();
+                if (!['jpg', 'png', 'gif', 'webp'].includes(ext)) {
+                    ext = 'jpg'; // fallback default
                 }
+                let scrname = 's' + idxstr + '.' + ext;
 
-                // Create the URL using gameId and itch_api_key
-                const url = `https://itch.io/api/1/${itch_api_key}/game/${gameId}/uploads`;
+                scrcode += '<a target="_blank" href="' + scrurl + '" download="' + scrname + '" title="Link to full-size image">' + scrname + '</a> <input title="Short sorted name for easy copypaste for downloading full-size image manually" class="issel" value="' + scrname + '"><br>'
+                curl_line += '-L ' + scrurl + ' -o ' + scrname + ' ';
+            });
+            curl_line += '&& exit';
+            $('textarea#isc_cli').val(curl_line);
 
-                // Create the <p> element with the link
-                const $p = $('<p id="isc_uploads" style="text-align:center;"></p>').append(
-                    $('<a></a>').attr('href', url).text(url)
-                );
+            $(this).prepend(scrcode);
+            $("input.issel").on("click", function () {
+                $(this).select();
+            });
+        });
 
-                // Prepend to #wrapper
-                $('#wrapper').prepend($p);
+        // Add game/author name
+
+        if ($('#isc_meta').length === 0) {
+            const fullTitle = document.title; // e.g., "Breakfast Game by sireel"
+            const nameValue = fullTitle.split(' by ').slice(0, -1).join(' by ');
+            log('Extracted game name:', nameValue);
+
+            // Extract author from the current URL (e.g., "sireel" from "https://sireel.itch.io/breakfast-game")
+            const hostname = window.location.hostname; // e.g., "sireel.itch.io"
+            const author = hostname.split('.')[0]; // "sireel"
+
+            // Create the <div> element with the two
+            let $div = $(`
+    <div id="isc_meta">
+        <div id="isc_uploads"><button id="isc_apikey" title="Check/set API key">API key</button> (<a href="https://itch.io/user/settings/api-keys" target="_blank" title="Get key here, requires free account">itch.io</a>) <a id="isc_apilink" target="_blank"></a></div><br>
+        <input id="isc_gamename" class="isc_input" type="text" title="Game name for easy copy paste" value="${nameValue}" readonly />
+        <input id="isc_authorname" class="isc_input" type="text" title="Author name for easy copy paste" value="${author}" readonly /><br><br>
+        <textarea class="isc_textarea" id="isc_markdown" title="Description area HTML as Markdown for easy copy paste"></textarea><br><br>
+    </div>
+`);
+            let target =
+                $('div.columns > div.right_col').first() ||
+                $('div.columns > div.left_col').first() ||
+                $('#wrapper').first() ||
+                $('body').first();
+
+            if (target && target.length) {
+                target.prepend($div);
             }
 
-            // add yyyy-mm-dd dates to infobox
-            $('.game_info_panel_widget abbr[title]:not(.isc)').each(function() {
-                const $abbr = $(this).addClass('isc');
-                $('.info_panel_wrapper').attr('style', 'display: block !important;');
-                const title = $abbr.attr('title'); // e.g. "30 June 2024 @ 04:24 UTC"
-
-                // Extract day, month name, year
-                const m = title.match(/(\d{1,2}) (\w+) (\d{4})/);
-                if (!m) return;
-
-                const [ , day, monthName, year ] = m;
-                const monthMap = {
-                    January:'01', February:'02', March:'03', April:'04',
-                    May:'05', June:'06', July:'07', August:'08',
-                    September:'09', October:'10', November:'11', December:'12'
-                };
-                const mm = monthMap[monthName];
-                if (!mm) return;
-
-                const dd = day.padStart(2,'0');
-                const iso = `${year}-${mm}-${dd}`;
-
-                // only add once
-                if ($abbr.next('input.isc-date').length) return;
-
-                // create the input
-                const $input = $('<input type="text" readonly>')
-                .addClass('isc-date')
-                .css({
-                    'width': '8em',
-                    'margin-left': '0.5em',
-                    'font-size': '0.9em'
-                })
-                .val(iso)
-                .on('click', function() {
-                    this.select();
-                });
-
-                // insert after the abbr
-                $abbr.after($input);
+            // self-select
+            $('#isc_gamename, #isc_authorname, #isc_markdown, #isc_cli').on('click', function () {
+                this.select();
             });
 
-        } // function isc() end
+            //
+            const dsc_source = $('div.formatted_description');
+            const dsc_target = $('#isc_markdown');
 
-        isc();
-        setInterval(isc, 1000);
+            if (dsc_source.length && dsc_target.length) {
+                const turndownService = new TurndownService();
+                const markdown = turndownService.turndown(dsc_source.html()); // or .get(0)
+                dsc_target.val(markdown);
+                log('Description converted to Markdown and inserted.');
+            } else {
+                log('Source or target element not found.');
+            }
+
+            // API stuff
+
+            $('#isc_apikey').on('click', async function () {
+                const currentKey = await getApiKey();
+                const newKey = prompt('Enter your Itch.io API key:', currentKey);
+                if (newKey !== null) {
+                    await setApiKey(newKey.trim());
+                    updateApiLink(newKey.trim());
+                }
+            });
+
+            // upload api link
+            const metaTag = $('meta[name="itch:path"]');
+            let gameId = null;
+
+            if (metaTag.length > 0) {
+                const content = metaTag.attr('content'); // get attribute with jQuery
+                const match = content.match(/\/?(\d+)$/); // extract digits at end
+                if (match) {
+                    gameId = match[1];
+                    log('Extracted game ID:', gameId);
+                }
+            }
+
+            //
+            function updateApiLink(apiKey) {
+                const api_url = `https://itch.io/api/1/${apiKey}/game/${gameId}/uploads`;
+                const $link = $('#isc_uploads #isc_apilink');
+                if ($link.length) {
+                    $link.attr('href', api_url);
+                    $link.text(`${gameId}/uploads`);
+                    $link.attr('title', 'Check file upload/update dates');
+                } else {
+                    $('#isc_uploads').append($('<a></a>')
+                                             .attr('href', api_url)
+                                             .attr('title', 'Check file upload/update dates')
+                                             .text(`${gameId}/uploads`));
+                }
+            }
+
+            getApiKey().then(apiKey => {
+                updateApiLink(apiKey || 'missing-key');
+            });
+        }
+
+        // add yyyy-mm-dd dates to infobox
+        $('.game_info_panel_widget abbr[title]:not(.isc)').each(function() {
+            const $abbr = $(this).addClass('isc');
+            $('.info_panel_wrapper').attr('style', 'display: block !important;');
+            const title = $abbr.attr('title'); // e.g. "30 June 2024 @ 04:24 UTC"
+
+            // Extract day, month name, year
+            const m = title.match(/(\d{1,2}) (\w+) (\d{4})/);
+            if (!m) return;
+
+            const [ , day, monthName, year ] = m;
+            const monthMap = {
+                January:'01', February:'02', March:'03', April:'04',
+                May:'05', June:'06', July:'07', August:'08',
+                September:'09', October:'10', November:'11', December:'12'
+            };
+            const mm = monthMap[monthName];
+            if (!mm) return;
+
+            const dd = day.padStart(2,'0');
+            const iso = `${year}-${mm}-${dd}`;
+
+            // only add once
+            if ($abbr.next('input.isc-date').length) return;
+
+            // create the input
+            const $input = $('<input type="text" readonly>')
+            .addClass('isc-date')
+            .css({
+                'width': '8em',
+                'margin-left': '0.5em',
+                'font-size': '0.9em'
+            })
+            .val(iso)
+            .on('click', function() {
+                this.select();
+            });
+
+            // insert after the abbr
+            $abbr.after($input);
+        });
+
+        // Add custom styles
+        const style = document.createElement('style');
+        style.textContent = `
+        /* Your CSS rules here */
+        .isc_input {
+          background-color: white !important;
+          color: black !important;
+          padding: 3px;
+          border: none;
+          cursor: pointer;
+          width: 40%;
+          display: inline-block;
+        }
+        .isc_textarea {
+          font-size: 4px;
+          width: 80em;
+          height: 10em;
+        }
+    `;
+        document.head.appendChild(style);
 
     }, false);
+
 })();
