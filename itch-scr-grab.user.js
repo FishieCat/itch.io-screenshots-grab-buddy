@@ -68,7 +68,7 @@
             curl_line += '&& exit';
             $('textarea#isc_cli').val(curl_line);
 
-            $(this).prepend(scrcode);
+            $('#isc_art').append(scrcode + '<br>');
             $("input.issel").on("click", function () {
                 $(this).select();
             });
